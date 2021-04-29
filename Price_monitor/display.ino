@@ -1,19 +1,10 @@
-struct menu_entry_type
-  {
-    const uint8_t *font;
-    uint16_t icon;
-    const char *name;
-  };
-
-struct menu_entry_type menu_entry_list[] =
+void drawFrame(void (*drawableFrame)())
 {
-  { u8g2_font_open_iconic_embedded_4x_t, 65, "Clock Setup"},
-  { u8g2_font_open_iconic_embedded_4x_t, 66, "Gear Game"},
-  { u8g2_font_open_iconic_embedded_4x_t, 67, "Flash Light"},
-  { u8g2_font_open_iconic_embedded_4x_t, 68, "Home"},
-  { u8g2_font_open_iconic_embedded_4x_t, 72, "Configuration"},
-  { NULL, 0, NULL } 
-};
+  u8g2.firstPage(); 
+  do{
+     drawableFrame(); 
+  }while(u8g2.nextPage());
+}
 
 void drawIcon(const uint8_t* iconName,u8g2_uint_t  x,u8g2_uint_t  y,uint16_t  glyph)
 {
@@ -23,40 +14,61 @@ void drawIcon(const uint8_t* iconName,u8g2_uint_t  x,u8g2_uint_t  y,uint16_t  gl
 
 void bootPage()
 {
-  drawIcon(u8g2_font_open_iconic_play_4x_t,u8g2.getDisplayWidth()/2-12,u8g2.getDisplayHeight()-22,64); 
+  drawIcon(u8g2_font_open_iconic_play_4x_t,DISPLAY_WIDTH/2-12,DISPLAY_HEIGHT-22,64); 
   u8g2.setFont(u8g2_font_glasstown_nbp_tf);
-  u8g2.setCursor(50,63);
+  uint8_t x_text_position = (DISPLAY_WIDTH - 13*5)/2;
+  u8g2.setCursor(x_text_position,63);
   u8g2.print(F("Price Monitor"));
 }
 
-void menuPage()
+void powerStatus()
 {
-    u8g2.clearBuffer();
-    draw(&current_state);  
-    u8g2.setFont(u8g2_font_helvB10_tr);  
-    u8g2.setCursor((u8g2.getDisplayWidth()-u8g2.getStrWidth(menu_entry_list[destination_state.position].name))/2,u8g2.getDisplayHeight()-5);
-    u8g2.print(menu_entry_list[destination_state.position].name);    
-    u8g2.sendBuffer();
-    delay(10);
+  
 }
 
-void draw(struct menu_state *state)
+
+void printerInfo()
 {
-  int16_t x;
-  uint8_t i;
-  x = state->menu_start;
-  i = 0;
-  while( menu_entry_list[i].icon > 0 )  
-  {
-    if ( x >= -ICON_WIDTH && x < u8g2.getDisplayWidth() )
-    {
-      u8g2.setFont(menu_entry_list[i].font);
-      u8g2.drawGlyph(x, ICON_Y, menu_entry_list[i].icon );
+  
+}
+
+void clock()
+{
+  
+}
+
+void pastPrint()
+{
+  
+}
+
+void settings()
+{
+}
+
+void menuPage()
+{    
+    detachInterrupt(ENCDT);
+    detachInterrupt(ENCCLK); 
+    for(int i = 0; i < 3; i++)
+    {   
+       int menuIconToPrint = (counter+i)%5;
+       if(i == 1)
+       {
+          u8g2.drawRBox((ICON_WIDTH + ICON_GAP)+ 4,DISPLAY_HEIGHT-18-ICON_HEIGHT,ICON_WIDTH+6,ICON_HEIGHT+5,4);
+          u8g2.setDrawColor(0); 
+          drawIcon(menu_entry_list[menuIconToPrint].largeIcon,(ICON_WIDTH + ICON_GAP)+7,DISPLAY_HEIGHT-15,menu_entry_list[menuIconToPrint].icon);
+          u8g2.setDrawColor(1); 
+          u8g2.setFont(u8g2_font_micro_tr);
+          uint8_t x_text_position = (DISPLAY_WIDTH - menu_entry_list[menuIconToPrint].name.length()*5)/2;
+          u8g2.setCursor(x_text_position+9,63);
+          u8g2.print(menu_entry_list[menuIconToPrint].name);
+          continue;
+       }
+       drawIcon(menu_entry_list[menuIconToPrint].smallIcon,i*(ICON_WIDTH*1.4)+15,DISPLAY_HEIGHT-23,menu_entry_list[menuIconToPrint].icon);
     }
-    i++;
-    x += ICON_WIDTH + ICON_GAP;
-  }
-  u8g2.drawFrame(state->frame_position-1, ICON_Y-ICON_HEIGHT-1, ICON_WIDTH+2, ICON_WIDTH+2);
-  u8g2.drawFrame(state->frame_position-2, ICON_Y-ICON_HEIGHT-2, ICON_WIDTH+4, ICON_WIDTH+4);
-  u8g2.drawFrame(state->frame_position-3, ICON_Y-ICON_HEIGHT-3, ICON_WIDTH+6, ICON_WIDTH+6);
+    Serial.println(counter);
+    Serial.println();
+    attachInterrupt(ENCDT, updateEncoder, CHANGE);
+    attachInterrupt(ENCCLK, updateEncoder, CHANGE);
 }
